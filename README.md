@@ -4,7 +4,31 @@
 
 ### Account Commands
 
+#### set address
+##### request
+```{"from":"secret", "type":"set address", "payload":{"address":"tcp://IP4:PORT"}}```
+##### reply
+```{"type":"set address", "payload":{"status":"OK" | "FAILED", "msg":"error msg" | null}}```
+
+#### set timezone
+
 ### Timer Commands
+
+#### echo
+
+#### set timer
+
+#### set alarm
+
+#### cancel
+
+#### del
+
+#### get
+
+#### get active
+
+#### get history
 
 ### Alarms
 
@@ -24,5 +48,5 @@ DBNAME= # name of database
 python -m venv ./.venv
 source ./.venv/bin/activate
 pip -r install requirements.txt
-python main.py &
+python main.py PORT &
 ```
