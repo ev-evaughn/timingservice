@@ -5,7 +5,7 @@
 ### Account Commands
 The two requests below must be made prior to an alarm expiring in order to receive the alarm. If your address or timezone should change, they can be adjusted without loosing your existing timers.
 
-#### set address
+#### set address:
 ##### request
 ```
 {"from":"secret", "type":"set address", "payload":{"address":"tcp://IP4:PORT"}}
@@ -16,7 +16,7 @@ The two requests below must be made prior to an alarm expiring in order to recei
                                      "msg":"error msg" | null}}
 ```
 
-#### set timezone
+#### set timezone:
 ##### request
 ```
 {"from":"secret", "type":"set timezone", "payload":{"timezone":integer}}
@@ -30,7 +30,7 @@ timezone is UTC offset.
 
 ### Timer Commands
 
-#### echo
+#### echo:
 ##### request
 ```
 {"type":"echo" [, any valid JSON]}
@@ -38,7 +38,7 @@ timezone is UTC offset.
 ##### reply
 The request itself will be the reply
 
-#### set timer
+#### set timer:
 ##### request
 ```
 {"from":"secret", "type":"set timer", "payload":{"name":"timer name, must be unique to user",
@@ -53,7 +53,7 @@ Time is relative to current time, eg: ":2:" is 2 minutes from now.
                                    "id":integer | null}}
 ```
 
-#### set alarm
+#### set alarm:
 ##### request
 ```
 {"from":"secret", "type":"set alarm", "payload":{"name":"timer name, must be unique to user",
@@ -63,15 +63,15 @@ Time is relative to current time, eg: ":2:" is 2 minutes from now.
 ```
 If date is null today is assumed, if a portion of date is missing, todays information is assumed, eg: "::30" is this year this month on the 30th. Unlike in "set timer" here the time is the time of day (not relative to now).
 
-#### cancel
+#### cancel:
 
-#### del
+#### del:
 
-#### get
+#### get:
 
-#### get active
+#### get active:
 
-#### get history
+#### get history:
 
 ### Alarms
 
