@@ -3,12 +3,17 @@
 ## Client Side
 
 ### Account Commands
+
 The two requests below must be made prior to an alarm expiring in order to receive the alarm. If your address or timezone should change, they can be adjusted without loosing your existing timers.
 
 #### set address
+
 ##### request
+
 ```{"from":"secret", "type":"set address", "payload":{"address":"tcp://IP4:PORT"}}```
+
 ##### reply
+
 ```{"type":"set address", "payload":{"status":"OK" | "FAILED",
                                      "msg":"error msg" | null}}```
 
