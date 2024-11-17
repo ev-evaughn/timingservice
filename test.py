@@ -1,5 +1,5 @@
 from colorama import init, Fore, Style
-import socket
+import socket as syssocket
 import sys
 import testCases
 import threading
@@ -11,8 +11,8 @@ def cPrint(s, color, **kwargs):
   print(f"{Style.NORMAL}{color}{s}{Style.RESET_ALL}", **kwargs)
 
 def app(name: str, repport : str, reqport) -> None:
-  reqThread = threading.Thread(target=request, args=(reqport))
-  repThread = threading.Thread(target=reply, args=(repport))
+  reqThread = threading.Thread(target=request, args=(reqport,))
+  repThread = threading.Thread(target=reply, args=(repport,))
 
   print(name + " running ...")
   reqThread.start()
@@ -26,7 +26,7 @@ def request(port : str) -> None:
 
   context = zmq.Context()
   socket = context.socket(zmq.REQ)
-  socket.connect(f'tcp://{socket.gethostname()}:{port}')
+  socket.connect(f'tcp://{syssocket.gethostname()}:{port}')
 
   cPrint(f'Clearing existing timers', Fore.BLUE, end='\n')
   try:
