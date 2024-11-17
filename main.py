@@ -162,7 +162,27 @@ def success(type: str) -> object:
   return {"type":type, "payload":{"status":"OK", "msg":None}}
 
 def getAddress(req : object) -> object:
-  raise Exception("not implemented.")
+  secret = req.get("from")
+  if secret:
+    sql = f'SELECT address FROM timingserviceUsers WHERE ' + \
+          f'secret = "{secret}";'
+    try:
+      res = db.query(sql)
+      if res:
+        return  {
+                  "type":"get address",
+                  "payload":{
+                    "status":"OK",
+                    "msg":None,
+                    "address":res[0]
+                  }
+                }
+      else:
+        raise Exception("DB did not return address.")
+    except Exception as e:
+      raise Exception(f"DB error: {str(e)}")
+  else:
+    raise Exception('"secret" missing.')
 
 def setAddress(req : object) -> object:
   payload = req.get("payload")
@@ -191,7 +211,26 @@ def setAddress(req : object) -> object:
     raise Exception(f"Either payload or secret missing.")
   
 def getTimezone(req : object) -> object:
-  raise Exception("Not implemented.")
+  secret = req.get("from")
+  if secret:
+    sql = f'SELECT timezone FROM timingserviceUsers WHERE secret = "{secret}";'
+    try:
+      res = db.query(sql)
+      if res:
+        return  {
+                  "type":"get timezone",
+                  "payload":{
+                    "status":"OK",
+                    "msg":None,
+                    "timezone":res[0]
+                  }
+                }
+      else:
+        raise Exception("DB did not return address.")
+    except Exception as e:
+      raise Exception(f"DB error: {str(e)}")
+  else:
+    raise Exception('"secret" missing.')
 
 def setTimezone(req : object) -> object:
   secret = req.get("from")
@@ -288,29 +327,238 @@ def setAlarm(req : object) -> object:
   payload = req.get("payload")
   if secret and payload:
     name = payload.get("name")
-    date = payload.get("date")
-    time = payload.get("time")
-    return None
-
-  raise Exception("Not implemented.")
+    time = payload.get("datetime")
+    payload = payload.get("payload")
+    if name and time and payload:
+      sql = f'INSERT INTO timingserviceTimers ' + \
+            f'(userID, timerName, time, payload) VALUES (' + \
+            f'(SELECT userID FROM timingserviceUsers WHERE ' + \
+                f'secret = "{secret}"), ' + \
+            f'"{name}", "{time}", \'{json.dumps(payload)}\');'
+      sql2 =  f'SELECT timerID FROM timingserviceTimers WHERE ' + \
+              f'userID = (SELECT userID FROM timingserviceUsers ' + \
+              f'WHERE secret = "{secret}") AND timerName = "{name}";'
+      
+      try:
+        res = db.query(sql)
+        if not res:
+          res = db.query(sql2)
+          if res:
+            return  {
+                      "type":"set alarm",
+                      "payload":{
+                        "status":"OK",
+                        "msg":None,
+                        "id":res[0]
+                      }
+                    }
+          else:
+            raise Exception("Failed to retrieve id from DB.")
+        else:
+          raise Exception(f"DB error: {str(res)}")
+      except Exception as e:
+        raise Exception(f"DB query error: {str(e)}")
+    else:
+      raise Exception(f'"name" or "time" or "payload" missing.')
+  else:
+    raise Exception(f'"secret" or "payload" missing.')
 
 def cancel(req : object) -> object:
-  raise Exception("Not implemented.")
+  secret = req.get("from")
+  payload = req.get("payload")
+  if secret and payload:
+    id = payload.get("id")
+    if id:
+      sql = f'UPDATE timingserviceTimers SET ack = "{datetime.datetime.now()}" WHERE timerID = {id} AND userID = (SELECT userID FROM timingserviceUsers WHERE secret = "{secret}");'
+      try:
+        res = db.query(sql)
+        if not res:
+          return  {
+                    "type":"cancel",
+                    "payload":{
+                      "status":"OK",
+                      "msg":None,
+                      "id":id
+                    }
+                  }
+        else:
+          raise Exception(f"DB error: {str(res)}")
+      except Exception as e:
+        raise Exception(f'DB error: {str(e)}')
+    else:
+      raise Exception('"id" missing.')
+  else:
+    raise Exception('"secret" or "payload" missing.')
 
 def delete(req: object) -> object:
-  raise Exception("Not implemented.")
+  secret = req.get("from")
+  payload = req.get("payload")
+  if secret and payload:
+    id = payload.get("id")
+    if id:
+      sql = f'DELETE FROM timingserviceTimers WHERE timerID = {id} AND ' + \
+            f'userID = (SELECT userID FROM timingserviceUsers WHERE ' + \
+            f'secret = "{secret}");'
+      try:
+        res = db.query(sql)
+        if not res:
+          return  {
+                    "type":"del",
+                    "payload":{
+                      "status":"OK",
+                      "msg":None,
+                      "id":id
+                    }
+                  }
+        else:
+          raise Exception(f"DB error: {str(res)}")
+      except Exception as e:
+        raise Exception(f"DB error: {str(e)}")
+    else:
+      raise Exception(f'"id" missing.')
+  else:
+    raise Exception(f'"secret" or "payload" missing.')
 
 def get(req: object) -> object:
-  raise Exception("Not implemented.")
+  secret = req.get("from")
+  payload = req.get("payload")
+  if secret and payload:
+    id = payload.get("id")
+    if id:
+      sql = f'SELECT timerID, timerName, time, payload, ack FROM timingserviceTimers WHERE userID = (SELECT userID FROM timingserviceUsers WHERE secret = "{secret}") AND timerID = {id};'
+
+      try:
+        res = db.query(sql)
+        if res:
+          payload = {
+            "id":res[0].get("timerID"),
+            "time":str(res[0].get("time")),
+            "payload":res[0].get("payload")
+          }
+          return  {
+                    "type":"get",
+                    "payload":{
+                      "status":"OK",
+                      "msg":None,
+                      "id":id,
+                      "payload":payload
+                    }
+                  }
+        else:
+          raise Exception("DB did not return timer.")
+      except Exception as e:
+        raise Exception(f"DB error: {str(e)}")
+    else:
+      raise Exception('"id" missing.')
+  else:
+    raise Exception('"secret" or "payload" missing.')
 
 def getIds(req : object) -> object:
-  raise Exception("Not implemented.")
+  secret = req.get("from")
+  if secret:
+    time = datetime.datetime.now()
+    sql = f'SELECT timerID FROM timingserviceTimers WHERE userID = ' + \
+          f'(SELECT userID FROM timingserviceUsers WHERE ' + \
+          f'secret = "{secret}") AND time > "{time}" AND ack IS null;'
+    sql2 =  f'SELECT timerID FROM timingserviceTimers WHERE userID = ' + \
+            f'(SELECT userID FROM timingserviceUsers WHERE ' + \
+            f'secret = "{secret}") AND time <= "{time}" OR ack IS NOT null;'
+
+    try:
+      res = db.query(sql)
+      active = []
+      for id in res:
+        active.append(id)
+
+      res = db.query(sql2)
+      history = []
+      for id in res:
+        history.append(id)
+
+      return  {
+                "type":"get ids",
+                "payload":{
+                  "status":"OK",
+                  "msg":None,
+                  "active ids":[x.get("timerID") for x in active],
+                  "history ids":[x.get("timerID") for x in history]
+                }
+              }
+    except Exception as e:
+      raise Exception(f"DB error: {str(e)}")
+  else:
+    raise Exception('"secret missing.')
 
 def getActive(req : object) -> object:
-  raise Exception("Not implemented.")
+  secret = req.get("from")
+  payload = req.get("payload")
+  if secret:
+    limit = None
+    start = None
+    if payload:
+      limit = payload.get("limit")
+      start = payload.get("start")
+
+    sql = f'SELECT timerID, time, payload FROM timingserviceTimers WHERE ' + \
+          f'userID = (SELECT userID FROM timingserviceUsers WHERE ' + \
+          f'secret = "{secret}") AND time > "{datetime.datetime.now}" ' + \
+          f'AND ack = null ORDER BY time ASC' + \
+          f'{f" LIMIT {limit}" if limit else ""}' + \
+          f'{f" OFFSET {start}" if start else ""};'
+
+    try:
+      res = db.query(sql)
+      if res:
+        return  {
+                  "type":"get active",
+                  "payload":{
+                    "status":"OK",
+                    "msg":None,
+                    "actives":res
+                  }
+                }
+      else:
+        raise Exception("DB didn't return actives")
+    except Exception as e:
+      raise Exception(f"DB error: {str(e)}")
+  else:
+    raise Exception('"secret" missing.')
 
 def getHistory(req : object) -> object:
-  raise Exception("Not implemented.")
+  secret = req.get("from")
+  payload = req.get("payload")
+  if secret:
+    limit = None
+    start = None
+    if payload:
+      limit = payload.get("limit")
+      start = payload.get("start")
+    
+    limit = f' LIMIT {limit}' if limit else ''
+    start = f' OFFSET {start}' if start else ''
+
+    sql = f'SELECT timerID, time, payload FROM timingserviceTimers WHERE ' + \
+          f'userID = (SELECT userID FROM timingserviceUsers WHERE ' + \
+          f'secret = "{secret}") AND time <= "{datetime.datetime.now()}"' + \
+          f' OR ack <> null ORDER BY time DESC{limit}{start};'
+
+    try:
+      res = db.query(sql)
+      if res:
+        return  {
+                  "type":"get history",
+                  "payload":{
+                    "status":"OK",
+                    "msg":None,
+                    "histories":res
+                  }
+                }
+      else:
+        raise Exception("DB did not return histories.")
+    except Exception as e:
+      raise Exception(f"DB error: {str(e)}")
+  else:
+    raise Exception('"secret" missing.')
 
 if __name__ == "__main__":
   args = sys.argv

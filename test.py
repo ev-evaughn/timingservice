@@ -69,7 +69,7 @@ def app(name: str, repport : str, reqport) -> None:
       "from":"testing",
       "type":"get",
       "payload":{
-        "id":2
+        "id":17
       }
     },
     {
@@ -109,6 +109,26 @@ def app(name: str, repport : str, reqport) -> None:
   reqContext = zmq.Context()
   reqSocket = reqContext.socket(zmq.REQ)
   reqSocket.connect(f'tcp://{socket.gethostname()}:{reqport}')
+
+  cPrint(f'Clearing existing timers', Fore.BLUE, end='\n')
+  try:
+    reqSocket.send_json({"from":"testing", "type":"get ids"})
+    res = reqSocket.recv_json()
+    cPrint(str(res), Fore.GREEN)
+    ids = res.get("payload").get("active ids") + \
+          res.get("payload").get("history ids")
+    print(ids)
+    for id in ids:
+      reqSocket.send_json({"from":"testing", "type":"del", "payload":{"id":id}})
+      res = reqSocket.recv_json()
+      if res.get("payload").get("status") == "OK":
+        cPrint(f'deleted: {res.get("payload").get("id")}', Fore.GREEN)
+      else:
+        cPrint(f'failed to delete: {res.get("payload").get("id")}', Fore.RED)
+
+  except Exception as e:
+    cPrint(f"Deleting exception: {str(e)}", Fore.RED, end='\n\n')
+
   for test in testCases:
     cPrint(f'Testing: {test}', Fore.BLUE)
     reqSocket.send_json(test)
