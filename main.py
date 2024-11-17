@@ -1,11 +1,19 @@
 # The main program file for timingservice
 
+import datetime
 import db
+from dotenv import load_dotenv, find_dotenv
+import json
+import os
+import re
 import subprocess
 import sys
 import zmq
 
+load_dotenv(find_dotenv())
+
 alarmProc = None
+UTC = os.environ.get("UTC")
 
 def app(name : str, port : str) -> None:
   global alarmProc
@@ -42,12 +50,30 @@ def app(name : str, port : str) -> None:
           "type":"error", 
           "payload":{
               "status":"FAILED", 
-              "msg":"Json formatting error" + str(e)
+              "msg":"Json formatting error: " + str(e)
           }
       })
       continue
 
-    repSocket.send_json(wrapper(inMsg))
+    outMsg = None
+    try:
+      outMsg = wrapper(inMsg)
+
+    except Exception as e:
+      print("Exception raised processing: ", e)
+      repSocket.send_json({
+        "type":"error",
+        "payload":{
+          "status":"FAILED",
+          "msg":"Processing failled: " + str(e)
+        }
+      })
+      continue
+
+    try:
+      repSocket.send_json(outMsg)
+    except Exception as e:
+      print("Exception raised sending: ", e)
 
 def wrapper(request : object) -> object:
   requestType = request.get("type")
@@ -55,34 +81,73 @@ def wrapper(request : object) -> object:
     return request
   
   elif requestType == "set address":
-    return setAddress(request)
+    try:
+      return setAddress(request)
+    except Exception as e:
+      return failed("set address", str(e))
   
   elif requestType == "set timezone":
-    return setTimezone(request)
+    try:
+      return setTimezone(request)
+    except Exception as e:
+      return failed("set timezone", str(e))
   
   elif requestType == "set timer":
-    return setTimer(request)
+    try:
+      return setTimer(request)
+    except Exception as e:
+      return failed("set timer", str(e))
 
   elif requestType == "set alarm":
-    return setAlarm(request)
+    try:
+      return setAlarm(request)
+    except Exception as e:
+      return failed("set alarm", str(e))
 
   elif requestType == "cancel":
-    return cancel(request)
+    try:
+      return cancel(request)
+    except Exception as e:
+      return failed("cancel", str(e))
 
   elif requestType == "del":
-    return delete(request)
+    try:
+      return delete(request)
+    except Exception as e:
+      return failed("del", str(e))
 
   elif requestType == "get":
-    return get(request)
+    try:
+      return get(request)
+    except Exception as e:
+      return failed("get", str(e))
 
   elif requestType == "get ids":
-    return getIds(request)
+    try:
+      return getIds(request)
+    except Exception as e:
+      return failed("get ids", str(e))
 
   elif requestType == "get active":
-    return getActive(request)
+    try:
+      return getActive(request)
+    except Exception as e:
+      return failed("get active", str(e))
 
   elif requestType == "get history":
-    return getHistory(request)
+    try:
+      return getHistory(request)
+    except Exception as e:
+      return failed("get history", str(e))
+    
+  else:
+    return failed(requestType, "Request \"type\" not recognized.")
+  
+def failed(type : str, error : str) -> object:
+  return {"type":type, "payload":{"status":"FAILED", "msg":error}}
+
+def success(type: str) -> object:
+  return {"type":type, "payload":{"status":"OK", "msg":None}}
 
 def setAddress(req : object) -> object:
   payload = req.get("payload")
@@ -95,15 +160,7 @@ def setAddress(req : object) -> object:
             f'secret = "{secret}");'
       res = db.query(sql)
       
-      if res:
-        return  {
-                  "type":"set address", 
-                  "payload":{
-                    "status":"FAILED", 
-                    "msg":f"Database error: {str(res)}"
-                  }
-                }
-      else:
+      if not res:
         return  {
                   "type":"set address",
                   "payload":{
@@ -111,24 +168,12 @@ def setAddress(req : object) -> object:
                     "msg":None
                   }
                 }
-
+      else:
+        raise Exception(f"DB error: {str(res)}.")
     else:
-      return  {
-                "type":"set address", 
-                "payload":{
-                  "status":"FAILED", 
-                  "msg":"Address missing"
-                }
-              }
-    
+      raise Exception(f"Address missing.")
   else:
-    return  {
-              "type":"set address",
-              "payload":{
-                "status":"FAILED",
-                "msg":"payload or from missing."
-              }
-            }
+    raise Exception(f"Either payload or secret missing.")
 
 def setTimezone(req : object) -> object:
   secret = req.get("from")
@@ -141,15 +186,7 @@ def setTimezone(req : object) -> object:
             f'secret = "{secret}");'
       res = db.query(sql)
 
-      if res:
-        return  {
-                  "type":"set timezone", 
-                  "payload":{
-                    "status":"FAILED", 
-                    "msg":f"Database error: {str(res)}"
-                  }
-                }
-      else:
+      if not res:
         return  {
                   "type":"set timezone",
                   "payload":{
@@ -157,28 +194,85 @@ def setTimezone(req : object) -> object:
                     "msg":None
                   }
                 }
+      else:
+        raise Exception(f'DB error: {str(res)}.')
+      
     else:
-      return  {
-                "type":"set timezone",
-                "payload":{
-                  "status":"FAILED",
-                  "msg":"timezone missing."
-                }
-              }
+      raise Exception(f'"timezone" missing.')
+    
   else:
-    return  {
-              "type":"set timezone",
-              "payload":{
-                "status":"FAILED",
-                "msg":"payload or from missing."
-              }
-            }
+    raise Exception(f'"secret" or "payload" missing.')
 
 def setTimer(req : object) -> object:
-  return None
+  secret = req.get("from")
+  payload = req.get("payload")
+  if secret and payload:
+    name = payload.get("name")
+    time = payload.get("time")
+    payload = payload.get("payload")
+    if name and time and payload:
+      match = re.search(
+          "^(?P<hour>\d{1,2})?:" + \
+          "(?P<min>\d{1,2})?:" + \
+          "(?P<sec>\d{1,2})?$", time)
+      if match:
+        matches = match.groupdict()
+        hour = matches.get("hour") if matches.get("hour") else "0"
+        min = matches.get("min") if matches.get("min") else "0"
+        sec = matches.get("sec") if matches.get("sec") else "0"
+        time = datetime.timedelta(
+          seconds=int(hour),
+          minutes=int(min),
+          hours=int(sec)
+        )
+        time = time + datetime.datetime.now()
+        sql = f'INSERT INTO timingserviceTimers ' + \
+              f'(userID, timerName, time, payload) VALUES (' + \
+              f'(SELECT userID FROM timingserviceUsers WHERE ' + \
+                  f'secret = "{secret}"), ' + \
+              f'"{name}", "{str(time)}", \'{json.dumps(payload)}\');'
+        
+        sql2 =  f'SELECT timerID FROM timingserviceTimers WHERE ' + \
+                f'userID = (SELECT userID FROM timingserviceUsers ' + \
+                f'WHERE secret = "{secret}") and timerName = "{name}";'
+
+        try:
+          res = db.query(sql)
+          if not res:
+            res = db.query(sql2)
+            if res:
+              return  {
+                        "type":"set timer",
+                        "payload":{
+                          "status":"OK",
+                          "msg":None,
+                          "id":res[0]
+                        }
+                      }
+            else:
+              raise Exception("Failed to retrieve id from DB.")
+          else:
+            raise Exception(f"DB error: {str(res)}")
+        
+        except Exception as e:
+          raise Exception(f"DB query error: {str(e)}")
+      else:
+        raise Exception(f'regex match failed on "time".')
+    else:
+      raise Exception(f'"name" or "time" or "payload" missing.')
+  else:
+    raise Exception(f'"secret" or "payload" missing.')
 
 def setAlarm(req : object) -> object:
-  return None
+  global UTC
+
+  secret = req.get("from")
+  payload = req.get("payload")
+  if secret and payload:
+    name = payload.get("name")
+    date = payload.get("date")
+    time = payload.get("time")
+    return None
 
 def cancel(req : object) -> object:
   return None

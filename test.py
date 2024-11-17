@@ -21,6 +21,15 @@ def app(name: str, repport : str, reqport) -> None:
       "payload":{
         "timezone":-8
       }
+    },
+    {
+      "from":"testing",
+      "type":"set timer",
+      "payload":{
+        "name":"timer one",
+        "time":"::2",
+        "payload":{"test":0}
+      }
     }
 ]
   
