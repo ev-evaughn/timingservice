@@ -128,8 +128,10 @@ The id is the id of the timer that was requested to be deleted.
 ```
 {"type":"get", "payload":{"status":"OK" | "FAILED",
                           "msg":"error msg" | null,
-                          "id":integer,
-                          "payload":JSON | null}}
+                          "timer":{"id":integer,
+                                   "datetime":"YYYY-MM-DD HH:MM:SS.ffffff",
+                                   "payload":JSON,
+                                   "ack":"YYYY-MM-DD HH:MM:SS.ffffff" | null} | null}}
 ```
 
 #### get ids:
