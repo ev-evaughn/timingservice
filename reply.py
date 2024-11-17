@@ -18,10 +18,8 @@ def app(name : str, port : str) -> None:
     socket.bind("tcp://*:" + port)
 
   except Exception as e:
-    print("Exception raised setting up zmq REP socket: ", e)
-    return
-  
-  print(name + " running ...")
+    raise Exception(f"reply setting up zmq REP socket: {str(e)}")
+
   # Main program loop
   while True:
     # Receive Request
@@ -59,7 +57,7 @@ def app(name : str, port : str) -> None:
       socket.send_json(outMsg)
 
     except Exception as e:
-      print("Exception raised sending: ", e)
+      print("Exception raised sending: ", e, file=sys.stderr)
 
 def wrapper(request : object) -> object:
   requestType = request.get("type")
@@ -560,11 +558,11 @@ def getHistory(req : object) -> object:
 if __name__ == "__main__":
   args = sys.argv
   if len(args) != 2:
-    print(f'Usage: python reply.py PORT')
+    raise Exception('Usage: python reply.py PORT')
 
   else:
     try:
       app(sys.argv[0], sys.argv[1])
 
     except Exception as e:
-      print("Exception raised trying to start program: ", e)
+      raise Exception("Trying to start reply program: ", e)

@@ -1,6 +1,7 @@
 # The main program file for timingservice
 
 from reply import wrapper
+import select
 import subprocess
 import sys
 
@@ -10,27 +11,33 @@ def app(name : str, port : str) -> None:
   try:
     reply = subprocess.Popen(["python", "reply.py", "12345"],
         stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE
+        stderr=subprocess.PIPE,
+        text=True
     )
   except Exception as e:
     print("Error starting reply: ", e)
     return
-
+  
   # start alarm
   alarm = None
   try:
     alarm = subprocess.Popen(["python", "alarm.py"], 
-        stdin=subprocess.PIPE, 
-        stdout=subprocess.PIPE
+        stdin=reply.stdout, 
+        stderr=subprocess.PIPE,
+        text=True
     )
   except Exception as e:
     print("Exception raised starting alarm.py: ", e)
     return
 
+  # main program
   print(name + " running ...")
-
   while True:
-    pass
+    rlist, _, _ = select.select([reply.stderr, alarm.stderr], [], [])
+    for fd in rlist:
+      msg = fd.readline()
+      if msg:
+        print(msg, end='')
 
 # Start program
 if __name__ == "__main__":
