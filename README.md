@@ -1,6 +1,7 @@
 # timingservice
 
 ## Client Side
+All communication between client and host is done over ZeroMQ in the REP/REQ context by sending JSON. Client may send either a single JSON object or a JSON list of JSON objects, host will always send a JSON object.
 
 ### Account Commands
 The two requests below must be made prior to an alarm expiring in order to receive the alarm. If your address or timezone should change, they can be adjusted without loosing your existing timers.
