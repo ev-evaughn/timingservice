@@ -8,7 +8,7 @@ import sys
 import zmq
 
 load_dotenv(find_dotenv())
-UTC = os.environ.get("UTC")
+UTC = datetime.timezone(datetime.timedelta(hours=int(os.environ.get("UTC"))))
 
 def app(name : str, port : str) -> None:
   # Bind REP context socket
@@ -245,6 +245,8 @@ def setTimezone(req : object) -> object:
     raise Exception(f'"secret" or "payload" missing.')
 
 def setTimer(req : object) -> object:
+  global UTC
+
   secret = req.get("from")
   payload = req.get("payload")
   if secret and payload:
@@ -262,19 +264,25 @@ def setTimer(req : object) -> object:
         min = matches.get("min") if matches.get("min") else "0"
         sec = matches.get("sec") if matches.get("sec") else "0"
         time = datetime.timedelta(
-          seconds=int(hour),
+          seconds=int(sec),
           minutes=int(min),
-          hours=int(sec)
+          hours=int(hour)
         )
-        time = time + datetime.datetime.now()
+        post = False
+        if time < datetime.timedelta(minutes=10):
+          post = True
+        
+        time = time + datetime.datetime.now(UTC) 
         sql = f'INSERT INTO timingserviceTimers ' + \
               f'(userID, timerName, time, payload) VALUES (' + \
               f'(SELECT userID FROM timingserviceUsers WHERE ' + \
                   f'secret = "{secret}"), ' + \
               f'"{name}", "{str(time)}", \'{json.dumps(payload)}\');'
         
-        sql2 =  f'SELECT timerID FROM timingserviceTimers WHERE ' + \
-                f'userID = (SELECT userID FROM timingserviceUsers ' + \
+        sql2 =  f'SELECT timerID, address FROM timingserviceTimers JOIN ' + \
+                f'timingserviceUsers ON timingserviceTimers.userID = ' + \
+                f'timingserviceUsers.userID WHERE ' + \
+                f'timingserviceTimers.userID = (SELECT userID FROM timingserviceUsers ' + \
                 f'WHERE secret = "{secret}") and timerName = "{name}";'
 
         try:
@@ -282,12 +290,15 @@ def setTimer(req : object) -> object:
           if not res:
             res = db.query(sql2)
             if res:
+              if post:
+                print(json.dumps({"timerID":res[0].get("timerID"), "address":res[0].get('address'), "timerName":name, "payload":payload}))
+                print(json.dumps({"timerID":res[0].get("timerID"), "address":res[0].get('address'), "timerName":name, "payload":payload}), file=sys.stderr)
               return  {
                         "type":"set timer",
                         "payload":{
                           "status":"OK",
                           "msg":None,
-                          "id":res[0]
+                          "id":res[0].get("timerID")
                         }
                       }
             else:

@@ -101,6 +101,24 @@ def app(name: str, repport : str, reqport) -> None:
       "from":"testing",
       "type":"get history",
       "payload":{}
+    },
+    {
+      "from":"testing",
+      "type":"set timer",
+      "payload":{
+        "name":"one second",
+        "time":"::1",
+        "payload":{"something":"here"}
+      }
+    },
+    {
+      "from":"testing",
+      "type":"set timer",
+      "payload":{
+        "name":"two seconds",
+        "time":"::2",
+        "payload":{"something":"there"}
+      }
     }
 ]
   
@@ -146,6 +164,27 @@ def app(name: str, repport : str, reqport) -> None:
 
     except Exception as e:
       cPrint(f"Exception reading: {str(e)}", Fore.RED)
+
+  while True:
+    msg = None
+    try:
+      msg = repSocket.recv_json()
+    except Exception as e:
+      cPrint(f'Recieve error: {str(e)}', Fore.RED)
+      try:
+        repSocket.send_json({"type":"error"})
+      except Exception as e:
+        cPrint(f'Send error after receive error: {str(e)}', Fore.RED)
+
+    if msg:
+      id = msg.get("id")
+      timerName = msg.get("name")
+      if id and timerName:
+        cPrint(f"id: {id}, name: {timerName}", Fore.GREEN)
+        try:
+          repSocket.send_json({"id":{id}})
+        except Exception as e:
+          cPrint(f'Send error: {str(e)}', Fore.RED)
 
 if __name__ == "__main__":
   args = sys.argv
