@@ -17,10 +17,21 @@ def app(name: str, repport : str, reqport) -> None:
     },
     {
       "from":"testing",
+      "type":"get address",
+    },
+    {
+      "from":"testing",
       "type":"set timezone",
       "payload":{
         "timezone":-8
       }
+    },
+    {
+      "from":"testing",
+      "type":"get timezone"
+    },
+    {
+      "type":"echo"
     },
     {
       "from":"testing",
@@ -30,6 +41,57 @@ def app(name: str, repport : str, reqport) -> None:
         "time":"::2",
         "payload":{"test":0}
       }
+    },
+    {
+      "from":"testing",
+      "type":"set alarm",
+      "payload":{
+        "name":"timer two",
+        "datetime":"2024-12-25 05:00:00",
+        "payload":{"msg":"merry xmas"}
+      }
+    },
+    {
+      "from":"testing",
+      "type":"cancel",
+      "payload":{
+        "id":1
+      }
+    },
+    {
+      "from":"testing",
+      "type":"del",
+      "payload":{
+        "id":1
+      }
+    },
+    {
+      "from":"testing",
+      "type":"get",
+      "payload":{
+        "id":2
+      }
+    },
+    {
+      "from":"testing",
+      "type":"get ids"
+    },
+    {
+      "from":"testing",
+      "type":"get active",
+    },
+    {
+      "from":"testing",
+      "type":"get active",
+      "payload":{
+        "limit":1,
+        "start":1
+      }
+    },
+    {
+      "from":"testing",
+      "type":"get history",
+      "payload":{}
     }
 ]
   

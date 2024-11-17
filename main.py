@@ -85,12 +85,24 @@ def wrapper(request : object) -> object:
       return setAddress(request)
     except Exception as e:
       return failed("set address", str(e))
+    
+  elif requestType == "get address":
+    try:
+      return getAddress(request)
+    except Exception as e:
+      return failed("get address", str(e))
   
   elif requestType == "set timezone":
     try:
       return setTimezone(request)
     except Exception as e:
       return failed("set timezone", str(e))
+    
+  elif requestType == "get timezone":
+    try:
+      return getTimezone(request)
+    except Exception as e:
+      return failed("get timezone", str(e))
   
   elif requestType == "set timer":
     try:
@@ -149,6 +161,9 @@ def failed(type : str, error : str) -> object:
 def success(type: str) -> object:
   return {"type":type, "payload":{"status":"OK", "msg":None}}
 
+def getAddress(req : object) -> object:
+  raise Exception("not implemented.")
+
 def setAddress(req : object) -> object:
   payload = req.get("payload")
   secret = req.get("from")
@@ -174,6 +189,9 @@ def setAddress(req : object) -> object:
       raise Exception(f"Address missing.")
   else:
     raise Exception(f"Either payload or secret missing.")
+  
+def getTimezone(req : object) -> object:
+  raise Exception("Not implemented.")
 
 def setTimezone(req : object) -> object:
   secret = req.get("from")
@@ -274,23 +292,25 @@ def setAlarm(req : object) -> object:
     time = payload.get("time")
     return None
 
+  raise Exception("Not implemented.")
+
 def cancel(req : object) -> object:
-  return None
+  raise Exception("Not implemented.")
 
 def delete(req: object) -> object:
-  return None
+  raise Exception("Not implemented.")
 
 def get(req: object) -> object:
-  return None
+  raise Exception("Not implemented.")
 
 def getIds(req : object) -> object:
-  return None
+  raise Exception("Not implemented.")
 
 def getActive(req : object) -> object:
-  return None
+  raise Exception("Not implemented.")
 
 def getHistory(req : object) -> object:
-  return None
+  raise Exception("Not implemented.")
 
 if __name__ == "__main__":
   args = sys.argv
