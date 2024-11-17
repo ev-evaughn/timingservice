@@ -148,7 +148,7 @@ limit the number of returns with "limit" and use "start" set where the returns s
 ```
 {"type":"get history", "payload":{"status":"OK" | "FAILED",
                                     "msg":"error msg" | null,
-                                    "histories":[{"id":integer, "date":"YYYY-MM-DD", "time":"HH:MM:SS.FFFFFF", "payload";JSON, "ack":"YYYY-MM-DD HH:MM:SS.FFFFFF"]}}}
+                                    "histories":[{"id":integer, "date":"YYYY-MM-DD", "time":"HH:MM:SS.FFFFFF", "payload";JSON, "ack":"YYYY-MM-DD HH:MM:SS.FFFFFF" | null}]}}
 ```
 Cancelled and Acked timers will appear in the history, deleted alarms have been deleted from the database.
 
