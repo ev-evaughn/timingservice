@@ -108,11 +108,60 @@ The id is the id of the timer that was requested to be deleted.
                           "payload":JSON | null}}
 ```
 
+#### get ids:
+##### request
+```
+{"from":"secret", "type":"get ids"}
+```
+##### reply
+```
+{"type":"get ids", "payload":{"status":"OK" | "FAILED",
+                              "msg":"error msg" | null,
+                              "active ids":[],
+                              "history ids":[]}}
+```
+If there are aren't any acitive or historical ids, the lists will be empty, otherwise they will be filled with integers.
+
 #### get active:
+##### request
+```
+{"from":"secret", "type":"get active", "payload":{"limit":integer | null,
+                                                  "start: integer | nulll}
+                                                  | null}
+```
+limit the number of returns with "limit" and use "start" set where the returns start, eg: {"limit":1, "start":0} will get the next alarm to expire (if there is one).
+##### reply
+```
+{"type":"get active", "payload":{"status":"OK" | "FAILED",
+                                 "msg":"error msg" | null,
+                                 "actives":[{"id":integer, "date":"YYYY-MM-DD", "time":"HH:MM:SS.FFFFFF", "payload":JSON}]}}
+```
 
 #### get history:
-
+##### request
+```
+{"from":"secret", "type":"get history", "payload":{"limit":integer | null,
+                                                   "start:integer | null}
+                                                   | null}
+```
+##### reply
+```
+{"type":"get history", "payload":{"status":"OK" | "FAILED",
+                                    "msg":"error msg" | null,
+                                    "histories":[{"id":integer, "date":"YYYY-MM-DD", "time":"HH:MM:SS.FFFFFF", "payload";JSON, "ack":"YYYY-MM-DD HH:MM:SS.FFFFFF"]}}}
+```
 ### Alarms
+When the time somes the following request will be made to address you have set:
+##### request
+```
+{"id":integer, "payload":JSON}
+```
+##### reply
+please make the following reply so that the ack time can be set
+```
+{"id":integer}
+```
+Where the integer matches the integer in the request, which is the id of the alarm that has expired.
 
 ## Host Side
 
