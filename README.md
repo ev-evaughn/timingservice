@@ -17,6 +17,18 @@ The two requests below must be made prior to an alarm expiring in order to recei
                                   "msg":"error msg" | null}}
 ```
 
+#### get address:
+##### request
+```
+{"from":"secret", "type":"get address"}
+```
+##### reply
+```
+{"type":"get address", "payload":{"status":"OK" | "FAILED",
+                                  "msg":"error msg" | null,
+                                  "address":string | null}}
+```
+
 #### set timezone:
 ##### request
 ```
@@ -27,6 +39,18 @@ timezone is UTC offset.
 ```
 {"type":"set timezone", "payload":{"status":"OK" | "FAILED",
                                    "msg":"error msg" | null}}
+```
+
+#### get timezone:
+##### request
+```
+{"from":"secret", "type":"get timezone"}
+```
+##### reply
+```
+{"type":"get timezone", "payload":{"status":"OK" | "FAILED",
+                                   "msg":"error msg" | null,
+                                   "timezone":integer | null}}
 ```
 
 ### Timer Commands
@@ -43,7 +67,7 @@ The request itself will be the reply
 ##### request
 ```
 {"from":"secret", "type":"set timer", "payload":{"name":"timer name, must be unique to user",
-                                                 "time":"/^(?<hour>\d{1,2})?:(?<min>\d{1,2})?:(?<sec>\d{1,2})?:(?<dec>\d{1,6})?$/",
+                                                 "time":"/^(?<hour>\d{1,2})?:(?<min>\d{1,2})?:(?<sec>\d{1,2})?$/",
                                                  "payload":JSON}}
 ```
 Time is relative to current time, eg: ":2:" is 2 minutes from now.
@@ -58,11 +82,10 @@ Time is relative to current time, eg: ":2:" is 2 minutes from now.
 ##### request
 ```
 {"from":"secret", "type":"set alarm", "payload":{"name":"timer name, must be unique to user",
-                                                 "date":"/^(?<year>\d{4})?:(?<month>\d{1,2})?:(?<day>\d{1,2})?$/" | null,
-                                                 "time":"/^(?<hour>\d{1,2})?:(?<min>\d{1,2})?:(?<sec>\d{1,2})?:(?<dec>\d{1,6})?$/",
+                                                 "datetime":"YYYY-MM-DD HH:MM:SS.FFFFFF",
                                                  "payload":JSON}}
 ```
-If date is null today is assumed, if a portion of date is missing, todays information is assumed, eg: "::30" is this year this month on the 30th. Unlike in "set timer" here the time is the time of day (not relative to now).
+
 ##### reply
 ```
 {"type":"set alarm", "payload":{"status":"OK" | "FAILED",
@@ -135,7 +158,7 @@ limit the number of returns with "limit" and use "start" set where the returns s
 ```
 {"type":"get active", "payload":{"status":"OK" | "FAILED",
                                  "msg":"error msg" | null,
-                                 "actives":[{"id":integer, "date":"YYYY-MM-DD", "time":"HH:MM:SS.FFFFFF", "payload":JSON}]}}
+                                 "actives":[{"id":integer, "datetime":"YYYY-MM-DD HH:MM:SS.FFFFFF", "payload":JSON}]}}
 ```
 
 #### get history:
@@ -149,7 +172,7 @@ limit the number of returns with "limit" and use "start" set where the returns s
 ```
 {"type":"get history", "payload":{"status":"OK" | "FAILED",
                                     "msg":"error msg" | null,
-                                    "histories":[{"id":integer, "date":"YYYY-MM-DD", "time":"HH:MM:SS.FFFFFF", "payload";JSON, "ack":"YYYY-MM-DD HH:MM:SS.FFFFFF" | null}]}}
+                                    "histories":[{"id":integer, "datetime":"YYYY-MM-DD HH:MM:SS.FFFFFF", "payload";JSON, "ack":"YYYY-MM-DD HH:MM:SS.FFFFFF" | null}]}}
 ```
 Cancelled and Acked timers will appear in the history, deleted alarms have been deleted from the database.
 
