@@ -5,12 +5,11 @@ import subprocess
 import sys
 import zmq
 
-repSocket = None
 alarmProc = None
 
 def app(name : str, port : str) -> None:
-  global repSocket, alarmProc
-  
+  global alarmProc
+
   try:
     repContext = zmq.Context()
     repSocket  = repContext.socket(zmq.REP)
@@ -86,10 +85,94 @@ def wrapper(request : object) -> object:
     return getHistory(request)
 
 def setAddress(req : object) -> object:
-  return None
+  payload = req.get("payload")
+  secret = req.get("from")
+  if payload and secret:
+    address = payload.get("address")
+    if address:
+      sql = f'UPDATE timingserviceUsers SET address = "{address}" WHERE ' + \
+            f'userID = (SELECT userID FROM timingserviceUsers WHERE ' + \
+            f'secret = "{secret}");'
+      res = db.query(sql)
+      
+      if res:
+        return  {
+                  "type":"set address", 
+                  "payload":{
+                    "status":"FAILED", 
+                    "msg":f"Database error: {str(res)}"
+                  }
+                }
+      else:
+        return  {
+                  "type":"set address",
+                  "payload":{
+                    "status":"OK",
+                    "msg":None
+                  }
+                }
+
+    else:
+      return  {
+                "type":"set address", 
+                "payload":{
+                  "status":"FAILED", 
+                  "msg":"Address missing"
+                }
+              }
+    
+  else:
+    return  {
+              "type":"set address",
+              "payload":{
+                "status":"FAILED",
+                "msg":"payload or from missing."
+              }
+            }
 
 def setTimezone(req : object) -> object:
-  return None
+  secret = req.get("from")
+  payload = req.get("payload")
+  if secret and payload:
+    timezone = payload.get("timezone")
+    if timezone:
+      sql = f'UPDATE timingserviceUsers SET timezone = {timezone} WHERE ' + \
+            f'userID = (SELECT userID FROM timingserviceUsers WHERE ' + \
+            f'secret = "{secret}");'
+      res = db.query(sql)
+
+      if res:
+        return  {
+                  "type":"set timezone", 
+                  "payload":{
+                    "status":"FAILED", 
+                    "msg":f"Database error: {str(res)}"
+                  }
+                }
+      else:
+        return  {
+                  "type":"set timezone",
+                  "payload":{
+                    "status":"OK",
+                    "msg":None
+                  }
+                }
+    else:
+      return  {
+                "type":"set timezone",
+                "payload":{
+                  "status":"FAILED",
+                  "msg":"timezone missing."
+                }
+              }
+  else:
+    return  {
+              "type":"set timezone",
+              "payload":{
+                "status":"FAILED",
+                "msg":"payload or from missing."
+              }
+            }
 
 def setTimer(req : object) -> object:
   return None
