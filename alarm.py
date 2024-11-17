@@ -94,7 +94,7 @@ def sendAlarms():
     toSend = []
 
     try:
-      now = str(datetime.datetime.now())
+      now = datetime.datetime.now()
     except Exception as e:
       print(f"Alarm send datetime error: {str(e)}", file=sys.stderr)
 
@@ -104,10 +104,10 @@ def sendAlarms():
           print(alarm, file=sys.stderr)
           print(type(alarm), file=sys.stderr)
           time.sleep(3)
-          return
-          #if alarm.get("time") >= now:
-          #  print("Adding alarm to send list", file=sys.stderr)
-          #  toSend.append(alarm)
+          
+          if alarm.get("time") >= now:
+            print("Adding alarm to send list", file=sys.stderr)
+            toSend.append(alarm)
     except Exception as e:
         print(f'Alarm send lock error: {str(e)}', file=sys.stderr)
 
@@ -165,9 +165,9 @@ def readFromDatabase():
     if now and later:
       try:
         sql2 = sql.format(later)
-        print(sql2, file=sys.stderr)
+        #print(sql2, file=sys.stderr)
         res = db.query(sql.format(later))
-        print(f'from db: {str(res)}')
+        #print(f'from db: {str(res)}')
       except Exception as e:
         print(f"Alarm DB read from DB error: {str(e)}", file=sys.stderr)
 

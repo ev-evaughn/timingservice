@@ -292,7 +292,7 @@ def setTimer(req : object) -> object:
             if res:
               if post:
                 print(json.dumps({"timerID":res[0].get("timerID"), "address":res[0].get('address'), "timerName":name, "payload":payload}))
-                print(json.dumps({"timerID":res[0].get("timerID"), "address":res[0].get('address'), "timerName":name, "payload":payload}), file=sys.stderr)
+                #print(json.dumps({"timerID":res[0].get("timerID"), "address":res[0].get('address'), "timerName":name, "payload":payload}), file=sys.stderr)
               return  {
                         "type":"set timer",
                         "payload":{
