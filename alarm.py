@@ -4,7 +4,7 @@ import sys
 import zmq
 
 def app() -> None:
-  # Get the next 50 alarms
+  # Get the alarms for the next 10 min
   pass
 
 # Start program
