@@ -182,7 +182,7 @@ Cancelled and Acked timers will appear in the history, deleted alarms have been 
 When the time somes the following request will be made to address you have set:
 ##### request
 ```
-{"id":integer, "payload":JSON}
+{"id":integer, "name":"timer name", "payload":JSON}
 ```
 ##### reply
 please make the following reply so that the ack time can be set
