@@ -129,7 +129,7 @@ If there are aren't any acitive or historical ids, the lists will be empty, othe
                                                   "start: integer | nulll}
                                                   | null}
 ```
-limit the number of returns with "limit" and use "start" set where the returns start, eg: {"limit":1, "start":0} will get the next alarm to expire (if there is one).
+limit the number of returns with "limit" and use "start" set where the returns start, eg: {"limit":1, "start":0} will get the next alarm to expire (if there is one). If start is null, 0 is assumed, if limit is null all will be returned.
 ##### reply
 ```
 {"type":"get active", "payload":{"status":"OK" | "FAILED",
@@ -150,6 +150,8 @@ limit the number of returns with "limit" and use "start" set where the returns s
                                     "msg":"error msg" | null,
                                     "histories":[{"id":integer, "date":"YYYY-MM-DD", "time":"HH:MM:SS.FFFFFF", "payload";JSON, "ack":"YYYY-MM-DD HH:MM:SS.FFFFFF"]}}}
 ```
+Cancelled and Acked timers will appear in the history, deleted alarms have been deleted from the database.
+
 ### Alarms
 When the time somes the following request will be made to address you have set:
 ##### request
