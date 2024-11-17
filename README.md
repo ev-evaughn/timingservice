@@ -13,7 +13,7 @@ The two requests below must be made prior to an alarm expiring in order to recei
 ##### reply
 ```
 {"type":"set address", "payload":{"status":"OK" | "FAILED",
-                                     "msg":"error msg" | null}}
+                                  "msg":"error msg" | null}}
 ```
 
 #### set timezone:
@@ -25,7 +25,7 @@ timezone is UTC offset.
 ##### reply
 ```
 {"type":"set timezone", "payload":{"status":"OK" | "FAILED",
-                                      "msg":"error msg" | null}}
+                                   "msg":"error msg" | null}}
 ```
 
 ### Timer Commands
@@ -42,32 +42,71 @@ The request itself will be the reply
 ##### request
 ```
 {"from":"secret", "type":"set timer", "payload":{"name":"timer name, must be unique to user",
-                                                    "time":"/^(?<hour>\d{1,2})?:(?<min>\d{1,2})?:(?<sec>\d{1,2})?:(?<dec>\d{1,6})?$/",
-                                                    "payload":JSON}}
+                                                 "time":"/^(?<hour>\d{1,2})?:(?<min>\d{1,2})?:(?<sec>\d{1,2})?:(?<dec>\d{1,6})?$/",
+                                                 "payload":JSON}}
 ```
 Time is relative to current time, eg: ":2:" is 2 minutes from now.
 ##### reply
 ```
 {"type":"set timer", "payload":{"status":"OK" | "FAILED",
-                                   "msg":"error msg" | null,
-                                   "id":integer | null}}
+                                "msg":"error msg" | null,
+                                "id":integer | null}}
 ```
 
 #### set alarm:
 ##### request
 ```
 {"from":"secret", "type":"set alarm", "payload":{"name":"timer name, must be unique to user",
-                                                    "date":"/^(?<year>\d{4})?:(?<month>\d{1,2})?:(?<day>\d{1,2})?$/" | null,
-                                                    "time":"/^(?<hour>\d{1,2})?:(?<min>\d{1,2})?:(?<sec>\d{1,2})?:(?<dec>\d{1,6})?$/",
-                                                    "payload":JSON}}
+                                                 "date":"/^(?<year>\d{4})?:(?<month>\d{1,2})?:(?<day>\d{1,2})?$/" | null,
+                                                 "time":"/^(?<hour>\d{1,2})?:(?<min>\d{1,2})?:(?<sec>\d{1,2})?:(?<dec>\d{1,6})?$/",
+                                                 "payload":JSON}}
 ```
 If date is null today is assumed, if a portion of date is missing, todays information is assumed, eg: "::30" is this year this month on the 30th. Unlike in "set timer" here the time is the time of day (not relative to now).
+##### reply
+```
+{"type":"set alarm", "payload":{"status":"OK" | "FAILED",
+                                "msg":"error msg" | null,
+                                "id":integer | null}}
+```
 
 #### cancel:
+##### request
+```
+{"from":"secret", "type":"cancel", "payload":{"id":integer}}
+```
+##### reply
+```
+{"type":"cancel", "payload":{"status:"OK" | "FAILED",
+                             "msg":"error msg" | null,
+                             "id":integer}}
+```
+The id is the id of the timer that was requested to be cancelled.  
 
 #### del:
+##### request
+```
+{"from":"secret", "type":"del", "payload":{"id":integer}}
+```
+##### reply
+```
+{"type":"del", "payload":{"status":"OK" | "FAILED",
+                          "msg":"error msg" | null,
+                          "id":integer}}
+```
+The id is the id of the timer that was requested to be deleted.
 
 #### get:
+##### request
+```
+{"from":"secret", "type":"get", "payload":{"id":integer}}
+```
+##### reply
+```
+{"type":"get", "payload":{"status":"OK" | "FAILED",
+                          "msg":"error msg" | null,
+                          "id":integer,
+                          "payload":JSON | null}}
+```
 
 #### get active:
 
