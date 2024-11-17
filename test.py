@@ -53,6 +53,15 @@ def app(name: str, repport : str, reqport) -> None:
     },
     {
       "from":"testing",
+      "type":"set alarm",
+      "payload":{
+        "name":"timer three",
+        "datetime":"2023-7-4 12:00:00",
+        "payload":{"msg":"hotdogs"}
+      }
+    },
+    {
+      "from":"testing",
       "type":"cancel",
       "payload":{
         "id":1
@@ -69,7 +78,7 @@ def app(name: str, repport : str, reqport) -> None:
       "from":"testing",
       "type":"get",
       "payload":{
-        "id":17
+        "id":2
       }
     },
     {

@@ -501,20 +501,25 @@ def getActive(req : object) -> object:
 
     sql = f'SELECT timerID, time, payload FROM timingserviceTimers WHERE ' + \
           f'userID = (SELECT userID FROM timingserviceUsers WHERE ' + \
-          f'secret = "{secret}") AND time > "{datetime.datetime.now}" ' + \
-          f'AND ack = null ORDER BY time ASC' + \
+          f'secret = "{secret}") AND time > ' + \
+          f'"{str(datetime.datetime.now())}" ' + \
+          f'AND ack IS null ORDER BY time ASC' + \
           f'{f" LIMIT {limit}" if limit else ""}' + \
           f'{f" OFFSET {start}" if start else ""};'
 
     try:
       res = db.query(sql)
       if res:
+        actives = []
+        for x in res:
+          actives.append({"id":x.get("timerID"), "datetime":str(x.get("time")), "payload":x.get("payload")})
+
         return  {
                   "type":"get active",
                   "payload":{
                     "status":"OK",
                     "msg":None,
-                    "actives":res
+                    "actives":actives
                   }
                 }
       else:
@@ -537,20 +542,25 @@ def getHistory(req : object) -> object:
     limit = f' LIMIT {limit}' if limit else ''
     start = f' OFFSET {start}' if start else ''
 
-    sql = f'SELECT timerID, time, payload FROM timingserviceTimers WHERE ' + \
-          f'userID = (SELECT userID FROM timingserviceUsers WHERE ' + \
-          f'secret = "{secret}") AND time <= "{datetime.datetime.now()}"' + \
-          f' OR ack <> null ORDER BY time DESC{limit}{start};'
+    sql = f'SELECT timerID, time, payload, ack FROM timingserviceTimers ' + \
+          f'WHERE userID = (SELECT userID FROM timingserviceUsers WHERE ' + \
+          f'secret = "{secret}") AND time <= ' + \
+          f'"{str(datetime.datetime.now())}"' + \
+          f' OR ack IS NOT null ORDER BY time DESC{limit}{start};'
 
     try:
       res = db.query(sql)
       if res:
+        histories = []
+        for x in res:
+          histories.append({"id":x.get("timerID"), "datetime":str(x.get("time")), "payload":x.get("payload"), "ack":x.get("ack")})
+
         return  {
                   "type":"get history",
                   "payload":{
                     "status":"OK",
                     "msg":None,
-                    "histories":res
+                    "histories":histories
                   }
                 }
       else:
