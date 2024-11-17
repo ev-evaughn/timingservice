@@ -430,18 +430,18 @@ def get(req: object) -> object:
       try:
         res = db.query(sql)
         if res:
-          payload = {
+          timer = {
             "id":res[0].get("timerID"),
-            "time":str(res[0].get("time")),
-            "payload":res[0].get("payload")
+            "datetime":str(res[0].get("time")),
+            "payload":res[0].get("payload"),
+            "ack":res[0].get("ack")
           }
           return  {
                     "type":"get",
                     "payload":{
                       "status":"OK",
                       "msg":None,
-                      "id":id,
-                      "payload":payload
+                      "timer":timer
                     }
                   }
         else:
