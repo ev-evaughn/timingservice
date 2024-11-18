@@ -66,22 +66,49 @@ def request(port : str) -> None:
     except Exception as e:
       cPrint(f"Exception reading: {str(e)}", Fore.RED)
 
-  for test in testCases.interCases:
-    if len(ids) > 0:
-      string = test.format(ids.pop())
-      cPrint(f'Testing: {string}', Fore.BLUE)
-      try:
-        socket.send_string(string)
-      except Exception as e:
-        cPrint(f'Test req inter send error: {str(e)}', Fore.RED)
-        continue
-      try:
-        msg = socket.recv_json()
-        if msg:
-          cPrint(f'{str(msg)}', Fore.GREEN)
-      except Exception as e:
-        cPrint(f'Test req inter recv error: {str(e)}', Fore.RED)      
-  
+#  for test in testCases.interCases:
+#    if len(ids) > 0:
+#      string = test.format(ids.pop())
+#      cPrint(f'Testing: {string}', Fore.BLUE)
+#      try:
+#        socket.send_string(string)
+#      except Exception as e:
+#        cPrint(f'Test req inter send error: {str(e)}', Fore.RED)
+#        continue
+#      try:
+#        msg = socket.recv_json()
+#        if msg:
+#          cPrint(f'{str(msg)}', Fore.GREEN)
+#      except Exception as e:
+#        cPrint(f'Test req inter recv error: {str(e)}', Fore.RED)      
+  if len(ids) > 1:
+    first = {"from":"testing", "type":"cancel", "payload":{"id":ids.pop()}}
+    second = {"from":"testing", "type":"del", "payload":{"id":ids.pop()}}
+
+    cPrint(f'Testing: {str(first)}', Fore.BLUE)
+    try:
+      socket.send_json(first)
+    except Exception as e:
+      cPrint(f'Test req inter send error: {str(e)}', Fore.RED)
+    try:
+      msg = socket.recv_json()
+      if msg:
+        cPrint(str(msg), Fore.GREEN)
+    except Exception as e:
+      cPrint(f'Test req inter recv error: {str(e)}', Fore.RED)
+    
+    cPrint(f'Testing: {str(second)}', Fore.BLUE)
+    try:
+      socket.send_json(second)
+    except Exception as e:
+      cPrint(f'Test req inter send error: {str(e)}', Fore.RED)
+    try:
+      msg = socket.recv_json()
+      if msg:
+        cPrint(str(msg), Fore.GREEN)
+    except Exception as e:
+      cPrint(f'Test req inter recv error: {str(e)}', Fore.RED)
+
 def reply(port : str) -> None:
   try:
     context = zmq.Context()

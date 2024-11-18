@@ -12,10 +12,10 @@ alarms_lock = threading.Lock()
 threads = []
 threads_lock = threading.Lock()
 
-context = zmq.Context()
-socket = context.socket(zmq.REQ)
 
 def app() -> None:
+  time.sleep(50)
+
   dbThread = threading.Thread(target=readFromDatabase)
   inThread = threading.Thread(target=readFromStdin)
   alarmThread = threading.Thread(target=sendAlarms)
@@ -41,6 +41,9 @@ def sendAlarm(alarm):
   name = alarm.get("timerName")
   payload = alarm.get("payload")
   address = alarm.get("address")
+
+  context = zmq.Context()
+  socket = context.socket(zmq.REQ)
 
   print(f'trigger id: {str(id)}')
   try:
@@ -101,16 +104,17 @@ def sendAlarms():
     try:
       with alarms_lock:
         for alarm in alarms.values():
-          print(alarm, file=sys.stderr)
-          print(type(alarm), file=sys.stderr)
-          time.sleep(3)
+          #print(alarm, file=sys.stderr)
+          #print(type(alarm), file=sys.stderr)
+          #time.sleep(3)
           
-          if alarm.get("time") >= now:
+          if alarm.get("time") <= now:
             print("Adding alarm to send list", file=sys.stderr)
             toSend.append(alarm)
     except Exception as e:
         print(f'Alarm send lock error: {str(e)}', file=sys.stderr)
 
+    time.sleep(3)
     if toSend:
       for alarm in toSend:
         with threads_lock:
