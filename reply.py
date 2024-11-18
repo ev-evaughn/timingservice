@@ -289,7 +289,11 @@ def setTimer(req : object) -> object:
             res = db.query(sql2)
             if res:
               if post:
-                print(json.dumps({"timerID":res[0].get("timerID"), "address":res[0].get('address'), "timerName":name, "payload":payload}))
+                try:
+                    print(json.dumps({"timerID":res[0].get("timerID"), "address":res[0].get('address'), "timerName":name, "payload":payload}))
+                    print("Reply to wrote stdout", file=sys.stderr)
+                except Exception as e:
+                    print(f'Reply print to stdout error: {str(e)}', file=sys.stderr)
                 #print(json.dumps({"timerID":res[0].get("timerID"), "address":res[0].get('address'), "timerName":name, "payload":payload}), file=sys.stderr)
               return  {
                         "type":"set timer",

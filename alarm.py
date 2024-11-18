@@ -9,30 +9,21 @@ import zmq
 
 alarms = {}
 alarms_lock = threading.Lock()
-threads = []
-threads_lock = threading.Lock()
-
 
 def app() -> None:
-  time.sleep(5)
+  #time.sleep(5)
 
   dbThread = threading.Thread(target=readFromDatabase)
   inThread = threading.Thread(target=readFromStdin)
   alarmThread = threading.Thread(target=sendAlarms)
   
-  with threads_lock:
-    dbThread.start()
-    inThread.start()
-    alarmThread.start()
-    threads = [dbThread, inThread, alarmThread]
+  dbThread.start()
+  inThread.start()
+  alarmThread.start()
 
-  while True:
-    print("main sleep", file=sys.stderr)
-    time.sleep(10)
-    with threads_lock:
-      for thread in threads:
-        if not thread.is_alive():
-          thread.join(1)
+  dbThread.join()
+  inThread.join()
+  alarmThread.join()
 
 def sendAlarm(alarm):
   global socket, alarms, alarms_lock
@@ -94,8 +85,8 @@ def sendAlarms():
 
   while True:
     #print("sending", file=sys.stderr)
-    with alarms_lock:
-        print(str(alarms), file=sys.stderr)
+    #with alarms_lock:
+     #   print(str(alarms), file=sys.stderr)
 
     now = None
     toSend = []
@@ -118,13 +109,10 @@ def sendAlarms():
     except Exception as e:
         print(f'Alarm send lock error: {str(e)}', file=sys.stderr)
 
-    time.sleep(3)
+    #time.sleep(3)
     if toSend:
       for alarm in toSend:
-        with threads_lock:
-          thread = threading.Thread(target=sendAlarm, args=(alarm,))
-          thread.start()
-          threads.append(thread)
+        sendAlarm(alarm)  
         
 
 
@@ -132,28 +120,25 @@ def readFromStdin():
   global alarms, alarms_lock
 
   while True:
-    print('Select starting', file=sys.stderr)
-    rlist, _, _ = select.select([sys.stdin], [], [])
-    for fd in rlist:
-      msg = fd.readline()
-      if msg:
-        alarm = None
-        try:
-          alarm = json.loads(msg)
-        except Exception as e:
-          print(f'Alarms stdin json error: {str(e)}', file=sys.stderr)
+    msg = sys.stdin.readline()
+    if msg != '\n':
+      alarm = None
+      try:
+        alarm = json.loads(msg)
+      except Exception as e:
+        print(f'Alarms stdin json error: {str(e)}', file=sys.stderr)
 
-        if alarm:
-          id = alarm.get("timerID")
-          if id:
-            if alarm.get("ack"):
-              with alarms_lock:
-                if id in alarms.keys():
-                  alarms.pop(id)
-            else:
-              with alarms_lock:
-                if id not in alarms.keys():
-                  alarms[id] = alarm
+      if alarm:
+        id = alarm.get("timerID")
+        if id:
+          if alarm.get("ack"):
+            with alarms_lock:
+              if id in alarms.keys():
+                alarms.pop(id)
+          else:
+            with alarms_lock:
+              if not id in alarms.keys():
+                alarms[id] = alarm
 
 def readFromDatabase():
   global alarms, alarms_lock
@@ -208,7 +193,7 @@ def readFromDatabase():
     try:
       pass
       #print('DB search going to sleep', file=sys.stderr)
-      time.sleep(10)#300)
+      #time.sleep(300)
     except Exception as e:
       print(f'Alarm DB sleep error: {str(e)}', file=sys.stderr)
 

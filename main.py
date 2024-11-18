@@ -21,7 +21,7 @@ def app(name : str, port : str) -> None:
   alarm = None
   try:
     alarm = subprocess.Popen(["python", "alarm.py"], 
-        stdin=reply.stdout, 
+        stdin=subprocess.PIPE, 
         stderr=subprocess.PIPE,
         text=True
     )
@@ -32,11 +32,17 @@ def app(name : str, port : str) -> None:
   # main program
   print(name + " running ...")
   while True:
-    rlist, _, _ = select.select([reply.stderr, alarm.stderr], [], [])
+    rlist, wlist, _ = select.select([reply.stderr, alarm.stderr, reply.stdout], [alarm.stdin], [])
     for fd in rlist:
-      msg = fd.readline()
-      if msg:
-        print(msg, end='')
+      if fd.fileno() == reply.stdout.fileno() and wlist:
+        msg = fd.readline()
+        if msg:
+            print(msg, file=alarm.stdin, end='')
+            print('main wrote to alarms stdin')
+      else:
+        msg = fd.readline()
+        if msg:
+            print(msg, end='')
 
 # Start program
 if __name__ == "__main__":
