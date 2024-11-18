@@ -14,7 +14,7 @@ threads_lock = threading.Lock()
 
 
 def app() -> None:
-  time.sleep(50)
+  time.sleep(5)
 
   dbThread = threading.Thread(target=readFromDatabase)
   inThread = threading.Thread(target=readFromStdin)
@@ -72,10 +72,10 @@ def sendAlarm(alarm):
         print(f'Alarm send datetime error: {str(e)}', file=sys.stderr)
 
       if now:
-        id = now.get("timerID")
+        id = msg.get("id")
         if id:
           sql = f'UPDATE timingserviceTimers SET ack = "{now}" WHERE ' + \
-              f'timerID = {now.get("timerID")};'
+              f'timerID = {id};'
           res = None
           try:
             res = db.query(sql)
@@ -86,13 +86,17 @@ def sendAlarm(alarm):
             print(f'Alarm send db error: {str(res)}', file=sys.stderr)
           else:
             with alarms_lock:
-              alarms.pop(id)
+              if id in alarms.keys():
+                alarms.pop(id)
 
 def sendAlarms():
   global alarms, threads, alarms_lock, threads_lock
 
   while True:
     #print("sending", file=sys.stderr)
+    with alarms_lock:
+        print(str(alarms), file=sys.stderr)
+
     now = None
     toSend = []
 

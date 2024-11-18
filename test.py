@@ -134,7 +134,7 @@ def reply(port : str) -> None:
       if id and timerName:
         cPrint(f"id: {id}, name: {timerName}", Fore.GREEN)
         try:
-          socket.send_json({"id":{id}})
+          socket.send_json({"id":id})
         except Exception as e:
           cPrint(f'Test reply send error: {str(e)}', Fore.RED)
 
