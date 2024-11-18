@@ -272,12 +272,10 @@ def setTimer(req : object) -> object:
         if time < datetime.timedelta(minutes=10):
           post = True
         
-        time = time + datetime.datetime.now(UTC) 
-        sql = f'INSERT INTO timingserviceTimers ' + \
-              f'(userID, timerName, time, payload) VALUES (' + \
-              f'(SELECT userID FROM timingserviceUsers WHERE ' + \
-                  f'secret = "{secret}"), ' + \
-              f'"{name}", "{time.isoformat(sep=' ')}", \'{json.dumps(payload)}\');'
+        time = time + datetime.datetime.now()#UTC) 
+        sql = f'INSERT INTO timingserviceTimers (userID, timerName, time, payload) ' + \
+              f'VALUES ((SELECT userID FROM timingserviceUsers WHERE secret = "{secret}"), ' + \
+              f'''"{name}", "{time.isoformat(sep=' ')}", '{json.dumps(payload)}');'''
         
         sql2 =  f'SELECT timerID, address FROM timingserviceTimers JOIN ' + \
                 f'timingserviceUsers ON timingserviceTimers.userID = ' + \

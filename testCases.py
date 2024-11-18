@@ -2,7 +2,7 @@ import socket
 
 baseCases = [
     {"from":"testing", "type":"set address", "payload":{
-        "address":f'tcp://{socket.gethostname()}:12345'
+        "address":f'tcp://{socket.gethostname()}:12346'
     }},
     {"from":"testing", "type":"get address"},
     {"from":"testing", "type":"set timezone", "payload":{

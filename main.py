@@ -1,6 +1,5 @@
 # The main program file for timingservice
 
-from reply import wrapper
 import select
 import subprocess
 import sys
