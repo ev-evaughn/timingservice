@@ -277,7 +277,7 @@ def setTimer(req : object) -> object:
               f'(userID, timerName, time, payload) VALUES (' + \
               f'(SELECT userID FROM timingserviceUsers WHERE ' + \
                   f'secret = "{secret}"), ' + \
-              f'"{name}", "{str(time)}", \'{json.dumps(payload)}\');'
+              f'"{name}", "{time.isoformat(sep=' ')}", \'{json.dumps(payload)}\');'
         
         sql2 =  f'SELECT timerID, address FROM timingserviceTimers JOIN ' + \
                 f'timingserviceUsers ON timingserviceTimers.userID = ' + \
