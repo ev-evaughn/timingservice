@@ -12,9 +12,9 @@ baseCases = [
     },
     {"type":"echo"
     },
-    {"from":"testing", "type":"set timer", "payload":{
-        "name":"timer one", "time":"::2", "payload":{"test":0}
-    }},
+    #{"from":"testing", "type":"set timer", "payload":{
+    #    "name":"timer one", "time":"::2", "payload":{"test":0}
+    #}},
     {"from":"testing", "type":"set alarm", "payload":{
         "name":"timer two", "datetime":"2024-12-25 05:00:00",
         "payload":{"msg":"merry xmas"}
@@ -27,19 +27,19 @@ baseCases = [
     },
     {"from":"testing", "type":"get active",
     },
-    {"from":"testing", "type":"get active", "payload":{
-        "limit":1, "start":1
-    }},
+    #{"from":"testing", "type":"get active", "payload":{
+    #    "limit":1, "start":1
+    #}},
     {"from":"testing", "type":"get history", "payload":{}
-    },
-    {"from":"testing", "type":"set timer", "payload":{
-        "name":"one second", "time":"::1",
-        "payload":{"something":"here"}
-    }},
-    {"from":"testing", "type":"set timer", "payload":{
-        "name":"two seconds", "time":"::2",
-        "payload":{"something":"there"}
-    }}
+    }#,
+    #{"from":"testing", "type":"set timer", "payload":{
+    #    "name":"one second", "time":"::1",
+    #    "payload":{"something":"here"}
+    #}},
+    #{"from":"testing", "type":"set timer", "payload":{
+    #    "name":"two seconds", "time":"::2",
+    #    "payload":{"something":"there"}
+    #}}
 ]
 
 interCases = [

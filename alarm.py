@@ -198,7 +198,7 @@ def readFromStdin():
 
 def readFromDatabase():
   global alarms, alarms_lock
-  time.sleep(10)
+  #time.sleep(10)
   sql = 'SELECT timerID, timerName, time, payload, address FROM timingserviceTimers JOIN timingserviceUsers ON timingserviceTimers.userID = timingserviceUsers.userID WHERE time <= "{}" AND ack IS NULL;'
   while True:
     now = None
