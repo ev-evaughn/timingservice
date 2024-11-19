@@ -60,9 +60,13 @@ def request(port : str) -> None:
         payload = msg.get("payload")
         if payload:
           id = payload.get("id")
+          status = payload.get("status")
           if id:
             ids.append(id)
-        cPrint(msg, Fore.GREEN)
+          if status == "OK":
+            cPrint(msg, Fore.GREEN)
+          else:
+            cPrint(msg, Fore.RED)
     except Exception as e:
       cPrint(f"Exception reading: {str(e)}", Fore.RED)
 

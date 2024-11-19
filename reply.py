@@ -9,6 +9,7 @@ import zmq
 
 load_dotenv(find_dotenv())
 UTC = datetime.timezone(datetime.timedelta(hours=int(os.environ.get("UTC"))))
+strTimeF = '%Y-%m-%d %H:%M:%S.%f'
 
 def app(name : str, port : str) -> None:
   # Bind REP context socket
@@ -22,42 +23,49 @@ def app(name : str, port : str) -> None:
 
   # Main program loop
   while True:
-    # Receive Request
-    inMsg = None
     try:
-      inMsg = socket.recv_json()
-
+      # Receive Request
+      inMsg = None
+      try:
+        inMsg = socket.recv_json()
+  
+      except Exception as e:
+        socket.send_json({
+          "type":"error",
+          "payload":{
+            "status":"FAILED",
+            "msg":f"ZMQ receive error: {str(e)}"
+          }
+        })
+        continue
+  
+      # Process Request
+      outMsg = None
+      try:
+        outMsg = wrapper(inMsg)
+  
+      except Exception as e:
+        socket.send_json({
+          "type":"error",
+          "payload":{
+            "status":"FAILED",
+            "msg":f"Failed to process request: {str(e)}"
+          }
+        })
+        continue
+  
+      # Send reply
+      try:
+        socket.send_json(outMsg)
+  
+      except Exception as e:
+        print("Exception raised sending: ", e, file=sys.stderr)
     except Exception as e:
-      socket.send_json({
-        "type":"error",
-        "payload":{
-          "status":"FAILED",
-          "msg":f"ZMQ receive error: {str(e)}"
-        }
-      })
-      continue
+      print(f"Main program loop exception: {str(e)}", file=sys.stderr)
+      context = zmq.Context()
+      socket = context.socket(zmq.REP)
+      socket.bind("tcp://*:" + port)
 
-    # Process Request
-    outMsg = None
-    try:
-      outMsg = wrapper(inMsg)
-
-    except Exception as e:
-      socket.send_json({
-        "type":"error",
-        "payload":{
-          "status":"FAILED",
-          "msg":f"Failed to process request: {str(e)}"
-        }
-      })
-      continue
-
-    # Send reply
-    try:
-      socket.send_json(outMsg)
-
-    except Exception as e:
-      print("Exception raised sending: ", e, file=sys.stderr)
 
 def wrapper(request : object) -> object:
   requestType = request.get("type")
@@ -144,6 +152,37 @@ def failed(type : str, error : str) -> object:
 
 def success(type: str) -> object:
   return {"type":type, "payload":{"status":"OK", "msg":None}}
+    
+def soon(id : int, name : str = '', time : datetime.datetime = None, payload : object = None, address : str = '', ack : bool = False) -> None:
+  try:
+    try:
+      if ack:
+        try:
+          print(json.dumps({"timerID":id, "ack":True}))
+          sys.stdout.flush()
+        except Exception as e:
+          print(f'Reply soon ack error: {str(e)}', file=sys.stderr)
+      elif name and payload and address and time:
+        now = datetime.datetime.now()
+        tenmin = now + datetime.timedelta(minutes=10)
+        #print(f'tenmin: {str(type(tenmin))} time: {str(type(time))}', file=sys.stderr)
+
+        if (time < tenmin):
+          try:
+            timeStr = time.strftime(strTimeF)
+            print(json.dumps({"timerID":id, "timerName":name, "time":timeStr, "payload":payload, "address":address}))
+            sys.stdout.flush()
+          except Exception as e:
+            print(f'Reply soon time to str error: {str(e)}', file=sys.stderr)
+        else:
+          print(f'another sanity check', file=sys.stderr)
+      else:
+        raise Exception(f'missing parameter: name={name}, time={str(time)}, payload={str(payload)}, address={address}') 
+    except Exception as e:
+      print(f'Reply soon sanity check: {str(e)}', file=sys.stderr)
+  except Exception as e:
+    print(f"Reply soon exception: {str(e)}", file=sys.stderr)
+  
 
 def getAddress(req : object) -> object:
   secret = req.get("from")
@@ -268,14 +307,10 @@ def setTimer(req : object) -> object:
           minutes=int(min),
           hours=int(hour)
         )
-        post = False
-        if time < datetime.timedelta(minutes=10):
-          post = True
-        
         time = time + datetime.datetime.now()#UTC) 
         sql = f'INSERT INTO timingserviceTimers (userID, timerName, time, payload) ' + \
               f'VALUES ((SELECT userID FROM timingserviceUsers WHERE secret = "{secret}"), ' + \
-              f'''"{name}", "{time.isoformat(sep=' ')}", '{json.dumps(payload)}');'''
+                        f'''"{name}", "{time.strftime(strTimeF)}", '{json.dumps(payload)}');'''
         
         sql2 =  f'SELECT timerID, address FROM timingserviceTimers JOIN ' + \
                 f'timingserviceUsers ON timingserviceTimers.userID = ' + \
@@ -288,13 +323,12 @@ def setTimer(req : object) -> object:
           if not res:
             res = db.query(sql2)
             if res:
-              if post:
-                try:
-                    print(json.dumps({"timerID":res[0].get("timerID"), "address":res[0].get('address'), "timerName":name, "payload":payload}))
-                    print("Reply to wrote stdout", file=sys.stderr)
-                except Exception as e:
-                    print(f'Reply print to stdout error: {str(e)}', file=sys.stderr)
-                #print(json.dumps({"timerID":res[0].get("timerID"), "address":res[0].get('address'), "timerName":name, "payload":payload}), file=sys.stderr)
+              soon(res[0].get("timerID"), 
+                   name, 
+                   time, 
+                   payload, 
+                   res[0].get("address")
+              ) 
               return  {
                         "type":"set timer",
                         "payload":{
@@ -332,29 +366,37 @@ def setAlarm(req : object) -> object:
             f'(SELECT userID FROM timingserviceUsers WHERE ' + \
                 f'secret = "{secret}"), ' + \
             f'"{name}", "{time}", \'{json.dumps(payload)}\');'
-      sql2 =  f'SELECT timerID FROM timingserviceTimers WHERE ' + \
-              f'userID = (SELECT userID FROM timingserviceUsers ' + \
+      sql2 =  f'SELECT timerID, address FROM timingserviceTimers JOIN timingserviceUsers ON timingserviceTimers.userID = timingserviceUsers.userID WHERE ' + \
+              f'timingserviceTimers.userID = (SELECT userID FROM timingserviceUsers ' + \
               f'WHERE secret = "{secret}") AND timerName = "{name}";'
       
       try:
         res = db.query(sql)
         if not res:
-          res = db.query(sql2)
-          if res:
-            return  {
-                      "type":"set alarm",
-                      "payload":{
-                        "status":"OK",
-                        "msg":None,
-                        "id":res[0]
+          try:
+            res = db.query(sql2)
+            if res:
+              try:
+                parsedTime = datetime.datetime.strptime(time, '%Y-%m-%d %H:%M:%S')
+              except Exception as e:
+                raise Exception(f'Reply setAlarm time parse error: {str(e)}')
+              soon(res[0], name, parsedTime, payload, res[0].get("address")) 
+              return  {
+                        "type":"set alarm",
+                        "payload":{
+                          "status":"OK",
+                          "msg":None,
+                          "id":res[0].get("timerID")
+                        }
                       }
-                    }
-          else:
-            raise Exception("Failed to retrieve id from DB.")
+            else:
+              raise Exception("Failed to retrieve id from DB.")
+          except Exception as e:
+            raise Exception(f"Reply setAlarm DB error: {str(e)}, query: {sql2}")
         else:
           raise Exception(f"DB error: {str(res)}")
       except Exception as e:
-        raise Exception(f"DB query error: {str(e)}")
+        raise Exception(f"DB query error: {str(e)}, query: {sql}")
     else:
       raise Exception(f'"name" or "time" or "payload" missing.')
   else:

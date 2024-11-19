@@ -37,8 +37,9 @@ def app(name : str, port : str) -> None:
       if fd.fileno() == reply.stdout.fileno() and wlist:
         msg = fd.readline()
         if msg:
-            print(msg, file=alarm.stdin, end='')
-            print('main wrote to alarms stdin')
+            alarm.stdin.write(msg)
+            alarm.stdin.flush()
+            print(f'main wrote to alarms stdin: {msg}', end='')
       else:
         msg = fd.readline()
         if msg:
