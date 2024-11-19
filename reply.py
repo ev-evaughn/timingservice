@@ -413,6 +413,7 @@ def cancel(req : object) -> object:
       try:
         res = db.query(sql)
         if not res:
+          soon(id=id, ack=True)
           return  {
                     "type":"cancel",
                     "payload":{
@@ -442,6 +443,7 @@ def delete(req: object) -> object:
       try:
         res = db.query(sql)
         if not res:
+          soon(id=id, ack=True)
           return  {
                     "type":"del",
                     "payload":{

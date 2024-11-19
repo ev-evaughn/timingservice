@@ -13,15 +13,15 @@ alarms_lock = threading.Lock()
 def app() -> None:
   #time.sleep(5)
 
-  #dbThread = threading.Thread(target=readFromDatabase)
+  dbThread = threading.Thread(target=readFromDatabase)
   inThread = threading.Thread(target=readFromStdin)
   alarmThread = threading.Thread(target=sendAlarms)
   
-  #dbThread.start()
+  dbThread.start()
   inThread.start()
   alarmThread.start()
 
-  #dbThread.join()
+  dbThread.join()
   inThread.join()
   alarmThread.join()
 
@@ -76,7 +76,7 @@ def sendAlarm(alarm):
           if res:
             print(f'Alarm send db error: {str(res)}', file=sys.stderr)
           else:
-            print('Asking for lock 1')
+            #print('Asking for lock 1')
             with alarms_lock:
               if id in alarms.keys():
                 alarms.pop(id)
@@ -100,24 +100,35 @@ def sendAlarms():
     try:
       #print('Askin for lock 3', file=sys.stderr)
       with alarms_lock:
+        #toRm = []
         #print(f'lock 3 aquired: {str(alarms_lock.locked())}', file=sys.stderr)
         for alarm in alarms.values():
           #print(alarm, file=sys.stderr)
           #print(type(alarm), file=sys.stderr)
           #time.sleep(3)
-          time = None
-          try:
-            time = datetime.datetime.strptime(alarm.get("time"), '%Y-%m-%d %H:%M:%S')
-          except:
-            try:
-              time = datetime.datetime.strptime(alarm.get("time"), '%Y-%m-%d %H:%M:%S.%f')
-            except:
-              raise Exception("unable to match time format")
-          if time <= now:
-            print("Adding alarm to send list", file=sys.stderr)
+          time = alarm.get("time")
+          
+         # if type(time) == type('str'):
+         #   try:
+         #     time = datetime.datetime.strptime(alarm.get("time"), '%Y-%m-%d %H:%M:%S')
+         #   except:
+         #     try:
+         #       time = datetime.datetime.strptime(alarm.get("time"), '%Y-%m-%d %H:%M:%S.%f')
+         #     except:
+         #       toRm.append(alarm)
+         #       print(f'unable to match time format: "{alarm.get("time")}"', file=sys.stderr)
+          if time and time <= now:
+            #print("Adding alarm to send list", file=sys.stderr)
             toSend.append(alarm)
       #print(f'lock 3 aquired: {str(alarms_lock.locked())}', file=sys.stderr)
-
+       # keys = []
+       # for alarm in toRm:
+       #   for k, v in alarms.items():
+       #     if alarm == v:
+       #       keys.append(k)
+       # for k in keys:
+       #   alarms.pop(k)
+            
     except Exception as e:
         print(f'Alarm send lock error: {str(e)}', file=sys.stderr)
 
@@ -144,24 +155,31 @@ def readFromStdin():
             try:
               alarm = json.loads(msg)
               try:
-                print(f'alarm: {str(alarm)}', file=sys.stderr)
+                #print(f'alarm: {str(alarm)}', file=sys.stderr)
                 id = alarm.get("timerID")
                 ack = alarm.get("ack")
                 if id:
                   if ack:
-                    print('Asking for lock 4', file=sys.stderr)
+                    #print('Asking for lock 4', file=sys.stderr)
+                    print(f'Cancel or delete id: {str(id)}', file=sys.stderr)
                     with alarms_lock:
                       if id in alarms.keys():
                         alarms.pop(id)
                   else:
                     try:
-                      pass
-                      #alarm["time"] = datetime.strptime(alarm["time"], '%Y-%m-%d %H:%M:%S.%f')
+                      time = datetime.datetime.strptime(alarm["time"], '%Y-%m-%d %H:%M:%S.%f')
+                      alarm["time"] = time
+                      with alarms_lock:
+                        alarms[id] = alarm
                     except Exception as e:
-                      print(f'Alarm stdin str to time error: {str(e)}', file=sys.stderr)
-                    print('Asking for lock 5', file=sys.stderr)
-                    with alarms_lock:
-                      alarms[id] = alarm
+                      try:
+                        time = datetime.datetime.strptime(alarm["time"], '%Y-%m-%d %H:%M:%S')
+                        alarm["time"] = time
+                        with alarms_lock:
+                          alarms[id] = alarm
+                      except:
+                        print(f'Alarm stdin str to time error: {str(e)}, time: {str(alarm["time"])}', file=sys.stderr)
+                    #print('Asking for lock 5', file=sys.stderr)
                 else:
                   print('Alarm stdin no id', file=sys.stderr)
               except Exception as e:
@@ -171,7 +189,8 @@ def readFromStdin():
           except Exception as e:
             print(f'Alarm stdin read error: {str(e)}', file=sys.stderr)
         else:
-          print('Alarm stdin nothing read in', file=sys.stderr)
+          pass
+          #print('Alarm stdin nothing read in', file=sys.stderr)
       except Exception as e:
         print(f'Alarm stdin select error: {str(e)}', file=sys.stderr)
     except Exception as e:
@@ -179,13 +198,15 @@ def readFromStdin():
 
 def readFromDatabase():
   global alarms, alarms_lock
-
+  time.sleep(10)
   sql = 'SELECT timerID, timerName, time, payload, address FROM timingserviceTimers JOIN timingserviceUsers ON timingserviceTimers.userID = timingserviceUsers.userID WHERE time <= "{}" AND ack IS NULL;'
   while True:
     now = None
     later = None
     res = None
 
+    with alarms_lock:
+        print(f'alarms: {str(alarms)}', file=sys.stderr)
     try:
       now = datetime.datetime.now()
       later = now + datetime.timedelta(minutes=10)
@@ -207,8 +228,12 @@ def readFromDatabase():
         with alarms_lock:
           for r in res:
             id = r.get("timerID")
-            if id not in alarms.keys():
+            print(f'id: {str(id)}, type: {str(type(id))}', file=sys.stderr)
+            if not id in alarms.keys():
               alarms[id] = r
+              print(f'alarms: {str(alarms)}', file=sys.stderr)
+            else:
+              print('not added', file=sys.stderr)
       except Exception as e:
         print(f'Alarm DB update error: {str(e)}', file=sys.stderr)
 
@@ -224,11 +249,14 @@ def readFromDatabase():
         with alarms_lock:
           for r in res:
             id = r.get("timerID")
+            print(f'id: {str(id)} removed', file=sys.stderr)
             if id in alarms.keys():
               alarms.pop(id)
       except Exception as e:
         print(f'Alarm DB rm update error: {str(e)}', file=sys.stderr)
 
+    with alarms_lock:
+        print(f'alarms end: {str(alarms)}', file=sys.stderr)
     try:
       #pass
       #print('DB search going to sleep', file=sys.stderr)
