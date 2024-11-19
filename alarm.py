@@ -105,8 +105,15 @@ def sendAlarms():
           #print(alarm, file=sys.stderr)
           #print(type(alarm), file=sys.stderr)
           #time.sleep(3)
-          
-          if alarm.get("time") <= now:
+          time = None
+          try:
+            time = datetime.datetime.strptime(alarm.get("time"), '%Y-%m-%d %H:%M:%S')
+          except:
+            try:
+              time = datetime.datetime.strptime(alarm.get("time"), '%Y-%m-%d %H:%M:%S.%f')
+            except:
+              raise Exception("unable to match time format")
+          if time <= now:
             print("Adding alarm to send list", file=sys.stderr)
             toSend.append(alarm)
       #print(f'lock 3 aquired: {str(alarms_lock.locked())}', file=sys.stderr)
@@ -128,13 +135,16 @@ def readFromStdin():
     try:
       try:
         fd, _, _ = select.select([sys.stdin], [], [], 3)
-        print(f'fd: {str(fd)}, type: {str(type(fd))}', file=sys.stderr)
+        #print(f'fd: {str(fd)}, type: {str(type(fd))}', file=sys.stderr)
         if fd:
           try:
-            msg = fd[0].read()
+            #msg = fd[0].readline()
+            msg = input()
+            #print(f'From alarm msg: {msg}', file=sys.stderr)
             try:
-              alarm = json.load(msg)
+              alarm = json.loads(msg)
               try:
+                print(f'alarm: {str(alarm)}', file=sys.stderr)
                 id = alarm.get("timerID")
                 ack = alarm.get("ack")
                 if id:
@@ -145,7 +155,8 @@ def readFromStdin():
                         alarms.pop(id)
                   else:
                     try:
-                      alarm["time"] = datetime.strptime(alarm["time"], '%Y-%m-%d %H:%M:%S.%f')
+                      pass
+                      #alarm["time"] = datetime.strptime(alarm["time"], '%Y-%m-%d %H:%M:%S.%f')
                     except Exception as e:
                       print(f'Alarm stdin str to time error: {str(e)}', file=sys.stderr)
                     print('Asking for lock 5', file=sys.stderr)

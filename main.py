@@ -39,7 +39,7 @@ def app(name : str, port : str) -> None:
         if msg:
             alarm.stdin.write(msg)
             alarm.stdin.flush()
-            print(f'main wrote to alarms stdin: {msg}', end='')
+            #print(f'main wrote to alarms stdin: {msg}', end='')
       else:
         msg = fd.readline()
         if msg:

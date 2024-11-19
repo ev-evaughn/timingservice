@@ -175,7 +175,8 @@ def soon(id : int, name : str = '', time : datetime.datetime = None, payload : o
           except Exception as e:
             print(f'Reply soon time to str error: {str(e)}', file=sys.stderr)
         else:
-          print(f'another sanity check', file=sys.stderr)
+          pass
+          #print(f'another sanity check', file=sys.stderr)
       else:
         raise Exception(f'missing parameter: name={name}, time={str(time)}, payload={str(payload)}, address={address}') 
     except Exception as e:
@@ -380,7 +381,7 @@ def setAlarm(req : object) -> object:
                 parsedTime = datetime.datetime.strptime(time, '%Y-%m-%d %H:%M:%S')
               except Exception as e:
                 raise Exception(f'Reply setAlarm time parse error: {str(e)}')
-              soon(res[0], name, parsedTime, payload, res[0].get("address")) 
+              soon(res[0].get("timerID"), name, parsedTime, payload, res[0].get("address")) 
               return  {
                         "type":"set alarm",
                         "payload":{
