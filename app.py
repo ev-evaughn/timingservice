@@ -6,7 +6,20 @@ import subprocess
 import sys
 import zmq
 
+db = None
+soon = None
+
+def sigHandle(signum, frame):
+    if db:
+        db.send_signal(signal.SIGTERM)
+    if soon:
+        soon.send_signal(signal.SIGTERM)
+    sys.exit()
+signal.signal(signal.SIGTERM, sigHandle)
+
 def app(name : str) -> int:
+    global db, soon
+
     try:
         db = subprocess.Popen(
                 ["python", "src/db.py"], 
@@ -31,10 +44,12 @@ def app(name : str) -> int:
             rfds, wfds, _ = select.select(rlist, wlist, [])
             if db.stdout in rfds and soon.stdin in wfds:
                 print(db.stdout.readline(), file=soon.stdin, end='')
+                soon.stdin.flush()
             if db.stderr in rfds and sys.stderr in wfds:
                 print(db.stderr.readline(), file=sys.stderr, end='')
             if soon.stdout in rfds and db.stdin in wfds:
                 print(soon.stdout.readline(), file=db.stdin, end='')
+                db.stdin.flush()
             if soon.stderr in rfds and sys.stderr in wfds:
                 print(soon.stderr.readline(), file=sys.stderr, end='')
             if sys.stdin in rfds:

@@ -1,3 +1,5 @@
+import commandHandle
+import json
 import select
 import signal
 import subprocess
@@ -9,21 +11,30 @@ def sigHandle(signum, frame):
     global command
 
     if command:
-        command.kill()
+        command.send_signal(signal.SIGTERM)
+    sys.exit()
 signal.signal(signal.SIGTERM, sigHandle)
 
-def handleSoon(input : str) -> str:
-    return input
-
 def handleCommand(input : str) -> str:
-    return input
+    try:
+        #print(f'db input {input}', file=sys.stderr)
+        msg = json.loads(input)
+        rsp = commandHandle.wrapper(msg)
+        return json.dumps(rsp)
+    except Exception as e:
+        print(f'db handleCommand exception: {str(e)}', file=sys.stderr)
+        return ''
+
+def handleAck(input : str) -> None:
+    ack = json.loads(input)
+    id = ack.get("id")
+    secret = ack.get("from")
+    commandHandle.ack(secret, id)
 
 def db():
     global command
     
     try:
-        print('db running ...', file=sys.stderr)
-    
         command = subprocess.Popen(["python", "src/command.py"], 
                                stdin=subprocess.PIPE, 
                                stdout=subprocess.PIPE, 
@@ -31,15 +42,17 @@ def db():
                                bufsize=1, 
                                text=True)
     
+        print('db running ...', file=sys.stderr)
         while True:
             rfds, wfds, _ = select.select(
                     [sys.stdin, command.stdout, command.stderr], 
                     [sys.stdout, sys.stderr, command.stdin], 
                     [])
-            if sys.stdin in rfds and sys.stdout in wfds:
-                print(handleSoon(sys.stdin.readline()), file=sys.stdout)
+            if sys.stdin in rfds:
+                handleAck(sys.stdin.readline())
             if command.stdout in rfds and command.stdin in wfds:
                 print(handleCommand(command.stdout.readline()), file=command.stdin)
+                command.stdin.flush()
             if command.stderr in rfds and sys.stderr in wfds:
                 print(command.stderr.readline(), file=sys.stderr, end='')
     

@@ -12,15 +12,18 @@ def cPrint(s, color, **kwargs):
   print(f"{Style.NORMAL}{color}{s}{Style.RESET_ALL}", **kwargs)
 
 def app(name: str, repport : str, reqport) -> None:
-  reqThread = threading.Thread(target=request, args=(reqport,))
-  repThread = threading.Thread(target=reply, args=(repport,))
+  #reqThread = threading.Thread(target=request, args=(reqport,))
+  #repThread = threading.Thread(target=reply, args=(repport,))
 
   print(name + " running ...")
-  reqThread.start()
-  repThread.start()
-
-  reqThread.join()
-  repThread.join()
+  #reqThread.start()
+  #repThread.start()
+  request(reqport)
+  reply(repport)
+  #reqThread.join()
+  #repThread.join()
+  #while True:
+   # pass
 
 def request(port : str) -> None:
   ids = []
@@ -48,6 +51,7 @@ def request(port : str) -> None:
   except Exception as e:
     cPrint(f"Deleting exception: {str(e)}", Fore.RED, end='\n\n')
 
+  ids = []
   for test in testCases.baseCases:
     cPrint(f'Testing: {test}', Fore.BLUE)
     try:
@@ -123,26 +127,39 @@ def reply(port : str) -> None:
   except Exception as e:
     cPrint(f"Test reply bind error: {str(e)}", Fore.RED)
   
+  inMsg, outMsg = (None, None)
   while True:
-    msg = None
     try:
-      msg = socket.recv_json()
+                inMsg = socket.recv_json()
+                if inMsg:
+                    id = inMsg.get("id")
+                    name = inMsg.get("timerName")
+                    payload = inMsg.get("payload")
+                    cPrint(f'id: {id}, name: {name}, payload: {payload}', Fore.GREEN)
+                    socket.send_json({"id":id})
+                else:
+                    cPrint('videotests nothing read', Fore.BLUE)
     except Exception as e:
-      cPrint(f'Test reply recv error: {str(e)}', Fore.RED)
-      try:
-        socket.send_json({"type":"error"})
-      except Exception as e:
-        cPrint(f'Test reply recv send error: {str(e)}', Fore.RED)
+        cPrint(f'videotest error: {str(e)}', Fore.RED)
 
-    if msg:
-      id = msg.get("id")
-      timerName = msg.get("name")
-      if id and timerName:
-        cPrint(f"id: {id}, name: {timerName}", Fore.GREEN)
-        try:
-          socket.send_json({"id":id})
-        except Exception as e:
-          cPrint(f'Test reply send error: {str(e)}', Fore.RED)
+   # try:
+   #   msg = socket.recv_json()
+   # except Exception as e:
+   #   cPrint(f'Test reply recv error: {str(e)}, msg: {str(msg)}', Fore.RED)
+   #   try:
+   #     socket.send_json({"type":"error"})
+   #   except Exception as e:
+   #     cPrint(f'Test reply recv send error: {str(e)}', Fore.RED)
+
+   # if msg:
+   #   id = msg.get("id")
+   #   timerName = msg.get("name")
+   #   if id and timerName:
+   #     cPrint(f"id: {id}, name: {timerName}", Fore.GREEN)
+   #     try:
+   #       socket.send_json({"id":id})
+   #     except Exception as e:
+   #       cPrint(f'Test reply send error: {str(e)}', Fore.RED)
 
 if __name__ == "__main__":
   args = sys.argv
